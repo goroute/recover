@@ -26,8 +26,10 @@ type Options struct {
 	OnError func(err error, stack []byte) `yaml:"disable_print_stack"`
 }
 
+// Option defines option func.
 type Option func(*Options)
 
+// GetDefaultOptions returns default options.
 func GetDefaultOptions() Options {
 	return Options{
 		Skipper:         route.DefaultSkipper,
@@ -37,24 +39,28 @@ func GetDefaultOptions() Options {
 	}
 }
 
+// Skipper sets skipper option.
 func Skipper(skipper route.Skipper) Option {
 	return func(o *Options) {
 		o.Skipper = skipper
 	}
 }
 
+// StackSize sets stack size option.
 func StackSize(stackSize int) Option {
 	return func(o *Options) {
 		o.StackSize = stackSize
 	}
 }
 
+// DisableStackAll sets disable stack option.
 func DisableStackAll(disableStackAll bool) Option {
 	return func(o *Options) {
 		o.DisableStackAll = disableStackAll
 	}
 }
 
+// OnError on error callback option.
 func OnError(fn func(err error, stack []byte)) Option {
 	return func(o *Options) {
 		o.OnError = fn

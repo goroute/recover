@@ -21,8 +21,7 @@ type Options struct {
 	// Optional. Default value false.
 	DisableStackAll bool `yaml:"disable_stack_all"`
 
-	// DisablePrintStack disables printing stack trace.
-	// Optional. Default value as false.
+	// OnError allows to set callback func to handle panic.
 	OnError func(err error, stack []byte) `yaml:"disable_print_stack"`
 }
 
@@ -60,7 +59,7 @@ func DisableStackAll(disableStackAll bool) Option {
 	}
 }
 
-// OnError on error callback option.
+// OnError sets error callback option.
 func OnError(fn func(err error, stack []byte)) Option {
 	return func(o *Options) {
 		o.OnError = fn
@@ -75,25 +74,23 @@ func New(options ...Option) route.MiddlewareFunc {
 		opt(&opts)
 	}
 
-	return func(next route.HandlerFunc) route.HandlerFunc {
-		return func(c route.Context) error {
-			if opts.Skipper(c) {
-				return next(c)
-			}
-
-			defer func() {
-				if r := recover(); r != nil {
-					err, ok := r.(error)
-					if !ok {
-						err = fmt.Errorf("%v", r)
-					}
-					stack := make([]byte, opts.StackSize)
-					length := runtime.Stack(stack, !opts.DisableStackAll)
-					opts.OnError(err, stack[:length])
-					c.Error(err)
-				}
-			}()
+	return func(c route.Context, next route.HandlerFunc) error {
+		if opts.Skipper(c) {
 			return next(c)
 		}
+
+		defer func() {
+			if r := recover(); r != nil {
+				err, ok := r.(error)
+				if !ok {
+					err = fmt.Errorf("%v", r)
+				}
+				stack := make([]byte, opts.StackSize)
+				length := runtime.Stack(stack, !opts.DisableStackAll)
+				opts.OnError(err, stack[:length])
+				c.Error(err)
+			}
+		}()
+		return next(c)
 	}
 }

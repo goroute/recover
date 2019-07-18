@@ -15,15 +15,17 @@ func TestRecover(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := mux.NewContext(req, rec)
 	options := GetDefaultOptions()
-	middleware := New(
+	mw := New(
 		Skipper(options.Skipper),
 		StackSize(options.StackSize),
 		DisableStackAll(options.DisableStackAll),
 		OnError(options.OnError),
 	)
-	h := middleware(route.HandlerFunc(func(c route.Context) error {
+	h := func(c route.Context) error {
 		panic("test")
-	}))
-	h(c)
+	}
+
+	mw(c, h)
+
 	assert.Equal(t, http.StatusInternalServerError, rec.Code)
 }

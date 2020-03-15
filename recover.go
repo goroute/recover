@@ -74,14 +74,15 @@ func New(options ...Option) route.MiddlewareFunc {
 		opt(&opts)
 	}
 
-	return func(c route.Context, next route.HandlerFunc) error {
+	return func(c route.Context, next route.HandlerFunc) (err error) {
 		if opts.Skipper(c) {
 			return next(c)
 		}
 
 		defer func() {
 			if r := recover(); r != nil {
-				err, ok := r.(error)
+				var ok bool
+				err, ok = r.(error)
 				if !ok {
 					err = fmt.Errorf("%v", r)
 				}
@@ -91,6 +92,7 @@ func New(options ...Option) route.MiddlewareFunc {
 				c.Error(err)
 			}
 		}()
-		return next(c)
+		err = next(c)
+		return
 	}
 }

@@ -22,10 +22,11 @@ func TestRecover(t *testing.T) {
 		OnError(options.OnError),
 	)
 	h := func(c route.Context) error {
-		panic("test")
+		panic("something went wrong")
 	}
 
-	mw(c, h)
+	err := mw(c, h)
 
 	assert.Equal(t, http.StatusInternalServerError, rec.Code)
+	assert.EqualError(t, err, "something went wrong")
 }
